@@ -37,3 +37,13 @@ def add_doors(game_map, north=False, south=False, east=False, west=False):
         game_map[height // 2][0] = "+"
     if east:
         game_map[height // 2][width - 1] = "+"
+
+def add_obsacles(game_map, positions):
+    # Dodaje przeszkody w podanej pozycji
+    for x, y in positions:
+        game_map[y][x] = "#"
+
+def add_items(game_map, positions):
+    # Dodaje przedmioty w podanej pozycji
+    for x, y in positions:
+        game_map[y][x] = "$"

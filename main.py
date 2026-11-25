@@ -3,9 +3,27 @@ import os
 import msvcrt
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
-from map_engine import create_map, place_entity, render_map, is_walkable, add_walls, add_doors
+from map_engine import create_map, place_entity, render_map, is_walkable, add_walls, add_doors, add_obsacles, add_items
 
 WORLD_W, WORLD_H = 3, 2   # świat ma 3x2 pokoje
+
+ROOM_OBSTACLES = {
+    (0, 0): [(4, 2), (4, 3), (10, 5)],
+    (1, 0): [(3, 3), (4, 3), (5, 3), (9, 4)],
+    (2, 0): [(7, 2), (7, 3), (7, 4)],
+    (0, 1): [(5, 5), (6, 5), (7, 5)],
+    (1, 1): [(3, 2), (11, 2), (3, 5), (11, 5)],
+    (2, 1): [(6, 3), (7, 3), (8, 3)],
+}
+ROOM_COINS = {
+    (0, 0): [(2, 2), (12, 5)],
+    (1, 0): [(7, 1), (11, 6)],
+    (2, 0): [(3, 5), (12, 2)],
+    (0, 1): [(2, 6), (10, 3)],
+    (1, 1): [(7, 4)],
+    (2, 1): [(2, 2), (12, 6)],
+}
+
 def clear_screen():
     os.system('cls')
 
@@ -19,6 +37,8 @@ def build_room(room_x, room_y, width, height):
         west=room_x > 0,
         east=room_x < WORLD_W - 1,
     )
+    add_obsacles(room, ROOM_OBSTACLES.get((room_x, room_y), []))
+    add_items(room, ROOM_COINS.get((room_x, room_y), []))
     return room
 
 
@@ -28,7 +48,10 @@ def main():
     player_symbol = input("Wpisz jeden znak, którym chcesz grać (np. @, X, &) i wciśnij Enter: ")
     
     # Małe zabezpieczenie: jak gracz nic nie wpisze i wciśnie Enter, dajemy domyślnego @
-    if len(player_symbol) == 0:
+    if len(player_symbol) == 0 :
+        player_symbol = "@"
+    if player_symbol == "#":
+        print("Nie możesz użyć #, bo to jest znak ściany. Używamy domyślnego @.")
         player_symbol = "@"
     else:
         # Bierzemy tylko pierwszą literkę, na wypadek gdyby wpisał całe słowo
@@ -38,6 +61,8 @@ def main():
     # Wymiary świata i startowa pozycja
     width, height = 15, 8
     room_x, room_y = 0, 0     # w którym pokoju jesteśmy
+    score = 0
+    collected = set()
     player_x, player_y = 7, 4
     
     # Nieskończona pętla gry
@@ -45,10 +70,13 @@ def main():
         clear_screen()
         level_map = build_room(room_x, room_y, width, height)
         # --- ZMIANA: Wrzucamy na mapę wybrany znak, a nie "sztywne" @ ---
+        coins_here = [(x, y) for (x, y) in ROOM_COINS.get((room_x, room_y), []) if (room_x, room_y, x, y) not in collected]
+        add_items(level_map, coins_here)
         place_entity(level_map, player_x, player_y, player_symbol)
         
         print("--- EKSPLORACJA LOCHÓW ---")
         print(f"Pokój: ({room_x}, {room_y})")
+        print(f"Monety: {score}")
         print(render_map(level_map))
         print("\nSterowanie: W A S D | Wyjście: Q")
         
@@ -84,6 +112,10 @@ def main():
                     room_x += 1
                     new_x = 1
             player_x, player_y = new_x, new_y
-            
+
+        if (player_x, player_y) in coins_here: 
+            collected.add((room_x, room_y, player_x, player_y))
+            score += 1 
+
 if __name__ == "__main__":
     main()
