@@ -1,10 +1,14 @@
+import random
 import sys
 import os
 import msvcrt
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
-from map_engine import add_traps, create_map, place_entity, render_map, is_walkable, add_walls, add_doors, add_obsacles, add_items, add_traps
+from map_engine import add_traps, create_map, place_entity, render_map, is_walkable, add_walls, add_doors, add_obstacles, add_items, free_cells
 
+
+
+ROOM_W, ROOM_H = 15, 8   # pokój ma 15x8 pól
 WORLD_W, WORLD_H = 3, 2   # świat ma 3x2 pokoje
 
 ROOM_OBSTACLES = {
@@ -15,26 +19,39 @@ ROOM_OBSTACLES = {
     (1, 1): [(3, 2), (11, 2), (3, 5), (11, 5)],
     (2, 1): [(6, 3), (7, 3), (8, 3)],
 }
-ROOM_COINS = {
-    (0, 0): [(2, 2), (12, 5)],
-    (1, 0): [(7, 1), (11, 6)],
-    (2, 0): [(3, 5), (12, 2)],
-    (0, 1): [(2, 6), (10, 3)],
-    (1, 1): [(7, 4)],
-    (2, 1): [(2, 2), (12, 6)],
-}
-
-ROOM_TRAPS = {
-    (0, 0): [(5, 2), (6, 3)],
-    (1, 0): [(4, 4), (5, 4)],
-    (2, 0): [(8, 3), (9, 3)],
-    (0, 1): [(6, 4), (7, 4)],
-    (1, 1): [(5, 3), (6, 3)],
-    (2, 1): [(7, 2), (8, 2)],
+forbidden = {
+    (7,4), (1, ROOM_H//2), (ROOM_W-2, ROOM_H//2), (ROOM_W//2, 1), (ROOM_W//2, ROOM_H-2)
 }
 
 def clear_screen():
     os.system('cls')
+
+def build_room_with_items(room_x, room_y, traps, coins):
+    room = build_room(room_x, room_y, ROOM_W, ROOM_H)
+    add_traps(room, traps[(room_x, room_y)])
+    add_items(room, coins[(room_x, room_y)])
+    return room
+
+def generate_world():
+    traps = {}
+    coins = {}
+    for room_x in range(WORLD_W):
+        for room_y in range(WORLD_H):
+            room = build_room(room_x, room_y, ROOM_W, ROOM_H)
+
+            # Wolne pola, bez startu gracza i pól przed drzwiami
+            cells = [c for c in free_cells(room) if c not in forbidden]
+
+            # Najpierw pułapki
+            room_traps = random.sample(cells, 3)
+
+            # Monety losujemy z tego, co zostało po pułapkach
+            cells = [c for c in cells if c not in room_traps]
+            room_coins = random.sample(cells, 3)
+
+            traps[(room_x, room_y)] = room_traps
+            coins[(room_x, room_y)] = room_coins
+    return traps, coins
 
 def build_room(room_x, room_y, width, height):
     room = create_map(width, height)
@@ -46,12 +63,10 @@ def build_room(room_x, room_y, width, height):
         west=room_x > 0,
         east=room_x < WORLD_W - 1,
     )
-    add_obsacles(room, ROOM_OBSTACLES.get((room_x, room_y), []))
-    add_items(room, ROOM_COINS.get((room_x, room_y), []))
-    add_traps(room, ROOM_TRAPS.get((room_x, room_y), []))
+    add_obstacles(room, ROOM_OBSTACLES.get((room_x, room_y), []))
     return room
 
-
+    
 def main():
     # --- NOWE: KREATOR POSTACI ---
     print("--- EKRAN STARTOWY ---")
@@ -68,20 +83,18 @@ def main():
         player_symbol = player_symbol[0]
 
 
+    traps, coins = generate_world()
     # Wymiary świata i startowa pozycja
     width, height = 15, 8
     room_x, room_y = 0, 0     # w którym pokoju jesteśmy
     score = 0
-    collected = set()
     player_x, player_y = 7, 4
     hp = 5 
     # Nieskończona pętla gry
     while True:
         clear_screen()
-        level_map = build_room(room_x, room_y, width, height)
-        # --- ZMIANA: Wrzucamy na mapę wybrany znak, a nie "sztywne" @ ---
-        coins_here = [(x, y) for (x, y) in ROOM_COINS.get((room_x, room_y), []) if (room_x, room_y, x, y) not in collected]
-        add_items(level_map, coins_here)
+        level_map = build_room_with_items(room_x, room_y, traps, coins)
+        # --- ZMIANA: Wrzucamy na mapę wybrany znak, a nie  @ ---
         place_entity(level_map, player_x, player_y, player_symbol)
         
         print("--- EKSPLORACJA LOCHÓW ---")
@@ -123,15 +136,18 @@ def main():
                     room_x += 1
                     new_x = 1
             player_x, player_y = new_x, new_y
-
-        if (player_x, player_y) in coins_here: 
-            collected.add((room_x, room_y, player_x, player_y))
-            score += 1 
-        elif (player_x, player_y) in ROOM_TRAPS.get((room_x, room_y), []):
-            hp -= 1
+            pos = (player_x, player_y)
+            if pos in coins[(room_x, room_y)]:
+                coins[(room_x, room_y)].remove(pos)
+                score += 1
+            elif pos in traps[(room_x, room_y)]:
+                traps[(room_x, room_y)].remove(pos)
+                hp -= 1
             if hp <= 0:
                 print("Zginąłeś!")
                 break
+
+        
 
 if __name__ == "__main__":
     main()

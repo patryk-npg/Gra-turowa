@@ -1,3 +1,4 @@
+import random
 def create_map(width, height):
     return [["." for _ in range(width)] for _ in range(height)]
 
@@ -38,7 +39,7 @@ def add_doors(game_map, north=False, south=False, east=False, west=False):
     if east:
         game_map[height // 2][width - 1] = "+"
 
-def add_obsacles(game_map, positions):
+def add_obstacles(game_map, positions):
     # Dodaje przeszkody w podanej pozycji
     for x, y in positions:
         game_map[y][x] = "#"
@@ -52,3 +53,13 @@ def add_traps(game_map, positions):
     # Dodaje pułapki w podanej pozycji
     for x, y in positions:
         game_map[y][x] = "^"
+
+def free_cells(game_map):
+    # Zwraca listę wolnych pól (nie ścian, nie przeszkód)
+    free = []
+    for y in range(len(game_map)):
+        for x in range(len(game_map[0])):
+            if game_map[y][x] == ".":
+                free.append((x, y))
+    return free
+
