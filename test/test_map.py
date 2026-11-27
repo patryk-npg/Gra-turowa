@@ -4,7 +4,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 
-from map_engine import add_doors, add_items, add_walls, create_map, is_walkable, add_obsacles, add_items
+from map_engine import add_doors, add_items, add_traps, add_walls, create_map, is_walkable, add_obsacles, add_items, add_traps
 
 def run_tests():
     test_map = create_map(5, 3)
@@ -41,3 +41,9 @@ def run_tests():
     assert item_map[2][2] == "$", "Brak monety"
     assert item_map[5][5] == "$", "Brak drugiej monety"
     assert is_walkable(item_map, 2, 2), "Moneta nie powinna blokować"
+
+    trap_map = create_map(15, 8)
+    add_traps(trap_map, [(3, 3), (6, 6)])
+    assert trap_map[3][3] == "^", "Brak pułapki"
+    assert trap_map[6][6] == "^", "Brak drugiej pułapki"
+    assert is_walkable(trap_map, 3, 3), "Pułapka nie powinna blokować"

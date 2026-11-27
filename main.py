@@ -3,7 +3,7 @@ import os
 import msvcrt
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
-from map_engine import create_map, place_entity, render_map, is_walkable, add_walls, add_doors, add_obsacles, add_items
+from map_engine import add_traps, create_map, place_entity, render_map, is_walkable, add_walls, add_doors, add_obsacles, add_items, add_traps
 
 WORLD_W, WORLD_H = 3, 2   # świat ma 3x2 pokoje
 
@@ -24,6 +24,15 @@ ROOM_COINS = {
     (2, 1): [(2, 2), (12, 6)],
 }
 
+ROOM_TRAPS = {
+    (0, 0): [(5, 2), (6, 3)],
+    (1, 0): [(4, 4), (5, 4)],
+    (2, 0): [(8, 3), (9, 3)],
+    (0, 1): [(6, 4), (7, 4)],
+    (1, 1): [(5, 3), (6, 3)],
+    (2, 1): [(7, 2), (8, 2)],
+}
+
 def clear_screen():
     os.system('cls')
 
@@ -39,6 +48,7 @@ def build_room(room_x, room_y, width, height):
     )
     add_obsacles(room, ROOM_OBSTACLES.get((room_x, room_y), []))
     add_items(room, ROOM_COINS.get((room_x, room_y), []))
+    add_traps(room, ROOM_TRAPS.get((room_x, room_y), []))
     return room
 
 
@@ -64,7 +74,7 @@ def main():
     score = 0
     collected = set()
     player_x, player_y = 7, 4
-    
+    hp = 5 
     # Nieskończona pętla gry
     while True:
         clear_screen()
@@ -77,6 +87,7 @@ def main():
         print("--- EKSPLORACJA LOCHÓW ---")
         print(f"Pokój: ({room_x}, {room_y})")
         print(f"Monety: {score}")
+        print(f"Życie: {hp}")
         print(render_map(level_map))
         print("\nSterowanie: W A S D | Wyjście: Q")
         
@@ -116,6 +127,11 @@ def main():
         if (player_x, player_y) in coins_here: 
             collected.add((room_x, room_y, player_x, player_y))
             score += 1 
+        elif (player_x, player_y) in ROOM_TRAPS.get((room_x, room_y), []):
+            hp -= 1
+            if hp <= 0:
+                print("Zginąłeś!")
+                break
 
 if __name__ == "__main__":
     main()

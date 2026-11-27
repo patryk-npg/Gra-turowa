@@ -47,3 +47,8 @@ def add_items(game_map, positions):
     # Dodaje przedmioty w podanej pozycji
     for x, y in positions:
         game_map[y][x] = "$"
+
+def add_traps(game_map, positions):
+    # Dodaje pułapki w podanej pozycji
+    for x, y in positions:
+        game_map[y][x] = "^"
